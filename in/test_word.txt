@@ -1,0 +1,5 @@
+test0 | A B C D E
+test1 | word word
+test2 | w1/w2 w1/w2
+test3 | a/b/c a/b/c
+test4 | word wo/rd

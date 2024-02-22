@@ -50,27 +50,33 @@ def main():
             next(wtoks), next(ftoks)
 
             # XXX ebből lehetne egy collect() nevű more_itertools-t csinálni
+            # XXX tuti, hogy lehet vhogy egyszerűsíteni -- de hogy?
             wt, ft = next(wtoks), next(ftoks)
             # gyüjtést kezd + továbblép mindkettőben
             ftok_joined = [ft]
-            wt, ft = next(wtoks), next(ftoks)
+            try: ft = next(ftoks)
+            except StopIteration: break
+            try: wt = next(wtoks)
+            except StopIteration: pass
             while wtoks and ftoks:
-                #print(f' wt=[{wt}] ft=[{ft}]')
                 if matches(wt, ft):
                     # print összegyűjtött
+                    #print('++'.join(ftok_joined))
                     print(ftok_joined)
                     # gyüjtést kezd + továbblép mindkettőben
                     ftok_joined = [ft]
-                    try:
-                        wt, ft = next(wtoks), next(ftoks)
-                    except StopIteration:
-                        break
+                    try: ft = next(ftoks)
+                    except StopIteration: break
+                    try: wt = next(wtoks)
+                    except StopIteration: pass
                 else:
                     # gyűjt
                     ftok_joined.append(ft)
                     # továbblép a gyűjtősben
-                    ft = next(ftoks)
+                    try: ft = next(ftoks)
+                    except StopIteration: break
             # print összegyűjtött
+            #print('++'.join(ftok_joined))
             print(ftok_joined)
 
 

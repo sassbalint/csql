@@ -81,10 +81,12 @@ def handle_spaces_process_parallel(word_file, full_file):
         wtoks = iter(wline.rstrip('\n').split())
         ftoks = iter(fline.rstrip('\n').split())
 
+        hit = []
+
         # 1st token: header
         header = next(wtoks)
         next(ftoks) # XXX ua kell lennie, ellenőrzés nincs
-        print(f'header=[{header}]')
+        hit.append(f'header=[{header}]')
 
         # 2ns token: '|'
         next(wtoks), next(ftoks)
@@ -100,8 +102,8 @@ def handle_spaces_process_parallel(word_file, full_file):
         except StopIteration: pass
         while wtoks and ftoks:
             if matches(wt, ft):
-                # print összegyűjtött
-                print(handle_noske_seps_split2fields('++'.join(ftok_joined)))
+                # store összegyűjtött
+                hit.append(handle_noske_seps_split2fields('++'.join(ftok_joined)))
                 # gyüjtést kezd + továbblép mindkettőben
                 ftok_joined = [ft]
                 try: ft = next(ftoks)
@@ -114,8 +116,10 @@ def handle_spaces_process_parallel(word_file, full_file):
                 # továbblép a gyűjtősben
                 try: ft = next(ftoks)
                 except StopIteration: break
-        # print összegyűjtött
-        print(handle_noske_seps_split2fields('++'.join(ftok_joined)))
+        # store összegyűjtött
+        hit.append(handle_noske_seps_split2fields('++'.join(ftok_joined)))
+
+        yield hit
 
 
 def main():
@@ -136,7 +140,10 @@ def main():
     full_file = f'{FILE}_full.txt' # the same with all attribs needed
 
     with open(word_file, "r") as wfile, open(full_file, "r") as ffile:
-        handle_spaces_process_parallel(wfile, ffile)
+        hits = handle_spaces_process_parallel(wfile, ffile)
+        for hit in hits:
+            for token in hit:
+                print(token)
 
 
 def get_args():

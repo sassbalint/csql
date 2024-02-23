@@ -3,10 +3,14 @@ csql version to support corpling research of "Brüsszel".
 """
 
 import argparse
+import pprint
 import sys
 
 
-NOSKE_SEP = '/' # is this configurable using crystal???
+# are these configurable using crystal???
+NOSKE_SEP = '/'
+NOSKE_KWIC_BEG = '<coll>'
+NOSKE_KWIC_END = '</coll>'
 
 # globals set by main() based on command line params
 CAN_CONTAIN_NOSKE_SEP = None
@@ -20,10 +24,35 @@ NO_OF_FIELDS = None
 # ejnye!
 
 
+class Hit:
+    """Represent a concordance hit: header, left context, kwic, right context."""
+    def __init__(self):
+        self.header = ''
+        self.left = []
+        self.kwic = []
+        self.right = []
+
+    @staticmethod
+    def format_list(lst):
+        MAX_LINE_LENGTH = 100000 # hope that its enough
+        return pprint.pformat(lst, width=MAX_LINE_LENGTH, compact=True) + '\n'
+
+    def __str__(self):
+        s = ''
+        s += self.header + '\n'
+        for token in self.left: s += self.format_list(token)
+        s += NOSKE_KWIC_BEG + '\n'
+        for token in self.kwic: s += self.format_list(token)
+        s += NOSKE_KWIC_END + '\n'
+        for token in self.right: s += self.format_list(token)
+        s = s.rstrip('\n') # to allow print work smoothly
+        return s
+
+
 # XXX rusnya -- 100%, hogy szépíthető, egyszerűsíthető
 def handle_noske_seps_split2fields(word):
     """Split word-string to fields, handling (non-extremal) NOSKE_SEPs smartly."""
-    if word == '<coll>' or word == '</coll>': # XXX hogy kezeljük a KWIC-t?
+    if word in (NOSKE_KWIC_BEG, NOSKE_KWIC_END): # XXX hogy kezeljük a KWIC-t?
         ret = word
     else:
         fields = word.split(NOSKE_SEP)
@@ -73,23 +102,25 @@ def handle_spaces_process_parallel(word_file, full_file):
     for wline, fline in zip(word_file, full_file):
 
         # fix
-        wline = wline.replace('<coll>', ' <coll> ')
-        wline = wline.replace('</coll>', ' </coll> ')
-        fline = fline.replace('<coll>', ' <coll> ')
-        fline = fline.replace('</coll>', ' </coll> ')
+        wline = wline.replace(f'{NOSKE_KWIC_BEG}', f' {NOSKE_KWIC_BEG} ')
+        wline = wline.replace(f'{NOSKE_KWIC_END}', f' {NOSKE_KWIC_END} ')
+        fline = fline.replace(f'{NOSKE_KWIC_BEG}', f' {NOSKE_KWIC_BEG} ')
+        fline = fline.replace(f'{NOSKE_KWIC_END}', f' {NOSKE_KWIC_END} ')
 
         wtoks = iter(wline.rstrip('\n').split())
         ftoks = iter(fline.rstrip('\n').split())
 
-        hit = []
+        hit = Hit()
 
         # 1st token: header
         header = next(wtoks)
         next(ftoks) # XXX ua kell lennie, ellenőrzés nincs
-        hit.append(f'header=[{header}]')
+        hit.header = f'header=[{header}]'
 
         # 2ns token: '|'
         next(wtoks), next(ftoks)
+
+        tokens = []
 
         # XXX ebből lehetne egy collect() nevű more_itertools-t csinálni
         # XXX tuti, hogy lehet vhogy egyszerűsíteni -- de hogy?
@@ -103,7 +134,7 @@ def handle_spaces_process_parallel(word_file, full_file):
         while wtoks and ftoks:
             if matches(wt, ft):
                 # store összegyűjtött
-                hit.append(handle_noske_seps_split2fields('++'.join(ftok_joined)))
+                tokens.append(handle_noske_seps_split2fields('++'.join(ftok_joined)))
                 # gyüjtést kezd + továbblép mindkettőben
                 ftok_joined = [ft]
                 try: ft = next(ftoks)
@@ -117,7 +148,16 @@ def handle_spaces_process_parallel(word_file, full_file):
                 try: ft = next(ftoks)
                 except StopIteration: break
         # store összegyűjtött
-        hit.append(handle_noske_seps_split2fields('++'.join(ftok_joined)))
+        tokens.append(handle_noske_seps_split2fields('++'.join(ftok_joined)))
+
+        status = 'left'
+        for token in tokens:
+            if token == NOSKE_KWIC_BEG:
+                status = 'kwic'
+            elif token == NOSKE_KWIC_END:
+                status = 'right'
+            else:
+                getattr(hit, status).append(token)
 
         yield hit
 
@@ -142,8 +182,7 @@ def main():
     with open(word_file, "r") as wfile, open(full_file, "r") as ffile:
         hits = handle_spaces_process_parallel(wfile, ffile)
         for hit in hits:
-            for token in hit:
-                print(token)
+            print(hit)
 
 
 def get_args():

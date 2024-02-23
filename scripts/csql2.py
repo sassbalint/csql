@@ -35,17 +35,14 @@ class Hit:
     @staticmethod
     def format_list(lst):
         MAX_LINE_LENGTH = 100000 # hope that its enough
-        return pprint.pformat(lst, width=MAX_LINE_LENGTH, compact=True) + '\n'
+        return pprint.pformat(lst, width=MAX_LINE_LENGTH, compact=True)
 
     def __str__(self):
         s = ''
-        s += self.header + '\n'
-        for token in self.left: s += self.format_list(token)
-        s += NOSKE_KWIC_BEG + '\n'
-        for token in self.kwic: s += self.format_list(token)
-        s += NOSKE_KWIC_END + '\n'
-        for token in self.right: s += self.format_list(token)
-        s = s.rstrip('\n') # to allow print work smoothly
+        s += self.header
+        for member in [self.left, self.kwic, self.right]:
+            s += '\t'
+            s += ' '.join(self.format_list(tok) for tok in member)
         return s
 
 
@@ -113,9 +110,8 @@ def handle_spaces_process_parallel(word_file, full_file):
         hit = Hit()
 
         # 1st token: header
-        header = next(wtoks)
+        hit.header = next(wtoks)
         next(ftoks) # XXX ua kell lennie, ellenőrzés nincs
-        hit.header = f'header=[{header}]'
 
         # 2ns token: '|'
         next(wtoks), next(ftoks)

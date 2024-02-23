@@ -1,33 +1,5 @@
-header=[test0]
-['A', 'A', 'A', 'A']
-['B', 'B', 'B', 'B++x++y']
-['C', 'C', 'C', 'C++1++2++3']
-['D', 'D', 'D', 'D++z']
-['E', 'E', 'E', 'E++q']
-<coll>
-['C', 'O', 'L', 'L']
-</coll>
-header=[test1]
-['word', 'lemma', 'POS', 'FEAT']
-['word', 'lemma', 'POS', 'FEAT']
-<coll>
-['C', 'O', 'L', 'L']
-</coll>
-header=[test2]
-['w1/w2', 'l1/l2', 'POS', 'FEAT']
-['w1/w2', 'l1/l2', 'POS', 'FEAT']
-<coll>
-['C', 'O', 'L', 'L']
-</coll>
-header=[test3]
-['a/b/c', 'a/b/c', 'X', 'Y']
-['a/b/c', 'a/b/c', 'X', 'Y']
-<coll>
-['C', 'O', 'L', 'L']
-</coll>
-header=[test4]
-['word', 'lemma', 'POS', 'FEAT++F2++F3']
-['wo/rd', 'lem/ma++l2++l3', 'POS', 'FEAT']
-<coll>
-['C', 'O', 'L', 'L']
-</coll>
+test0	['A', 'A', 'A', 'A'] ['B', 'B', 'B', 'B++x++y'] ['C', 'C', 'C', 'C++1++2++3'] ['D', 'D', 'D', 'D++z'] ['E', 'E', 'E', 'E++q']	['C', 'O', 'L', 'L']	
+test1	['word', 'lemma', 'POS', 'FEAT'] ['word', 'lemma', 'POS', 'FEAT']	['C', 'O', 'L', 'L']	
+test2	['w1/w2', 'l1/l2', 'POS', 'FEAT'] ['w1/w2', 'l1/l2', 'POS', 'FEAT']	['C', 'O', 'L', 'L']	
+test3	['a/b/c', 'a/b/c', 'X', 'Y'] ['a/b/c', 'a/b/c', 'X', 'Y']	['C', 'O', 'L', 'L']	
+test4	['word', 'lemma', 'POS', 'FEAT++F2++F3'] ['wo/rd', 'lem/ma++l2++l3', 'POS', 'FEAT']	['C', 'O', 'L', 'L']	

@@ -1,5 +1,5 @@
-test0 | A B C D E <coll> C </coll>
-test1 | word word <coll> C </coll>
-test2 | w1/w2 w1/w2 <coll> C </coll>
-test3 | a/b/c a/b/c <coll> C </coll>
-test4 | word wo/rd <coll> C </coll>
+test0,0,0 | A B C D E <coll> C </coll>
+test1,1,1 | word word <coll> C </coll>
+test2,2,2 | w1/w2 w1/w2 <coll> C </coll>
+test3,3,3 | a/b/c a/b/c <coll> C </coll>
+test4,4,4 | word wo/rd <coll> C </coll>

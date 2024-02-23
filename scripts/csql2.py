@@ -9,13 +9,13 @@ import sys
 
 # are these configurable using crystal???
 NOSKE_SEP = '/'
+NOSKE_HEADER_SEP = ','
 NOSKE_KWIC_BEG = '<coll>'
 NOSKE_KWIC_END = '</coll>'
 
 # globals set by main() based on command line params
-CAN_CONTAIN_NOSKE_SEP = None
 NO_OF_FIELDS = None
-
+CAN_CONTAIN_NOSKE_SEP = None
 
 # azért kell szórakozni, mert
 #  (1) az értékben lehet NOSKE_SEP, és ezt sehogy sem kezeli a formátum!!!
@@ -32,6 +32,8 @@ class Hit:
         self.kwic = []
         self.right = []
 
+    FIELD_SEP = '\t'
+
     @staticmethod
     def format_list(lst):
         MAX_LINE_LENGTH = 100000 # hope that its enough
@@ -39,9 +41,9 @@ class Hit:
 
     def __str__(self):
         s = ''
-        s += self.header
+        s += Hit.FIELD_SEP.join(self.header.split(NOSKE_HEADER_SEP))
         for member in [self.left, self.kwic, self.right]:
-            s += '\t'
+            s += Hit.FIELD_SEP
             s += ' '.join(self.format_list(tok) for tok in member)
         return s
 
@@ -162,12 +164,12 @@ def main():
     """Main."""
     args = get_args()
 
+    global NO_OF_FIELDS
+    NO_OF_FIELDS = args.number_of_fields
+
     global CAN_CONTAIN_NOSKE_SEP
     CAN_CONTAIN_NOSKE_SEP = list(map(int, args.can_contain_noske_sep.split(',')))
     # XXX feltesszük, hogy ezek mindig ugyanannyi plusz NOSKE_SEP-et tartalmaznak...
-
-    global NO_OF_FIELDS
-    NO_OF_FIELDS = args.number_of_fields
 
     FILE = args.file
 

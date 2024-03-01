@@ -17,6 +17,9 @@ NOSKE_KWIC_END = '</coll>'
 NO_OF_FIELDS = None
 CAN_CONTAIN_NOSKE_SEP = None
 
+# other params
+FRAGMENT_JOINER = '++'
+
 # azért kell szórakozni, mert
 #  (1) az értékben lehet NOSKE_SEP, és ezt sehogy sem kezeli a formátum!!!
 #  (2) az értékben lehet szóköz, és ezt sehogy sem kezeli a formátum!!!
@@ -75,8 +78,10 @@ class Hit:
 
 
 # XXX rusnya -- 100%, hogy szépíthető, egyszerűsíthető
-def handle_noske_seps_split2fields(word):
-    """Split word-string to fields, handling (non-extremal) NOSKE_SEPs smartly."""
+def handle_noske_seps_split2fields(word_fragments):
+    """Convert word-fragments into fields handling (non-extremal) NOSKE_SEPs smartly."""
+    word = FRAGMENT_JOINER.join(word_fragments)
+
     if word in (NOSKE_KWIC_BEG, NOSKE_KWIC_END): # XXX hogy kezeljük a KWIC-t?
         ret = word
     else:
@@ -150,7 +155,7 @@ def handle_spaces_process_parallel(word_file, full_file):
         # XXX tuti, hogy lehet vhogy egyszerűsíteni -- de hogy?
         wt, ft = next(wtoks), next(ftoks)
         # gyüjtést kezd + továbblép mindkettőben
-        ftok_joined = [ft]
+        ftok_fragments_collected = [ft]
         try: ft = next(ftoks)
         except StopIteration: break
         try: wt = next(wtoks)
@@ -158,21 +163,21 @@ def handle_spaces_process_parallel(word_file, full_file):
         while wtoks and ftoks:
             if matches(wt, ft):
                 # store összegyűjtött
-                tokens.append(handle_noske_seps_split2fields('++'.join(ftok_joined)))
+                tokens.append(handle_noske_seps_split2fields(ftok_fragments_collected))
                 # gyüjtést kezd + továbblép mindkettőben
-                ftok_joined = [ft]
+                ftok_fragments_collected = [ft]
                 try: ft = next(ftoks)
                 except StopIteration: break
                 try: wt = next(wtoks)
                 except StopIteration: pass
             else:
                 # gyűjt
-                ftok_joined.append(ft)
+                ftok_fragments_collected.append(ft)
                 # továbblép a gyűjtősben
                 try: ft = next(ftoks)
                 except StopIteration: break
         # store összegyűjtött
-        tokens.append(handle_noske_seps_split2fields('++'.join(ftok_joined)))
+        tokens.append(handle_noske_seps_split2fields(ftok_fragments_collected))
 
         status = 'left'
         for token in tokens:

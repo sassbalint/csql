@@ -36,42 +36,42 @@ class Hit:
     FORMAT_LIST_SEP = ' '
 
     def set_header(self, header_string):
+        """Stores header fields as a list."""
         self.header = header_string.split(NOSKE_HEADER_SEP)
 
     @staticmethod
     def format_token(tok): # token = list of features!
+        """Format features of a token as printed python list."""
         MAX_LINE_LENGTH = 100000 # hope that its enough
         return pprint.pformat(tok, width=MAX_LINE_LENGTH, compact=True)
 
     @staticmethod
     def format_text(text): # text = list of tokens!
+        """Format tokens of a text by joining them."""
         return Hit.FORMAT_LIST_SEP.join(Hit.format_token(tok) for tok in text)
 
-    def __str__(self):
-        s = ''
-        s += Hit.FIELD_SEP.join(self.header)
-        for member in [self.left, self.kwic, self.right]:
-            s += Hit.FIELD_SEP
-            s += self.format_text(member)
-        return s
+    # XXX vhogy ez így tűnik jónak, h "kívülről" kezeli, nem `self`-ként, hm..
+    # XXX talán, hogy az osztályon kívül is definiálhassunk ilyen fgveket, hm..
+    @staticmethod
+    def orig_fields(hit):
+        """
+        Default processing function for `get_data_record()`.
+        Give original NoSkE format but cut into fields.
+        """
+        return hit.header + [hit.format_text(member) for member in [hit.left, hit.kwic, hit.right]]
 
-    def get_data_record(self):
-        """Return a data record."""
-        # How could it be parametrized in detail? XXX
-
-        # original ~ NoSkE basic but cut into fields
-        fields = self.header + [self.format_text(member) for member in [self.left, self.kwic, self.right]]
-
-        # header + csak a KWIC szóalak
-        #fields = self.header + [self.kwic[0][0]]
-
-        # KWIC szóalak lemma + 1 bal-kontext lemma + 1 jobb-kontext lemma
-        #fields = [self.left[-1][1], self.kwic[0][1], self.right[0][1]]
-
-        # még olyat lehetne, hogy megkeresi a legközelebbi igét :)
-        #fields = XXX
-
+    def get_data_record(self, func=None):
+        """Return a .tsv data record applying `func` to `self`."""
+        if func is None: func = Hit.orig_fields
+        fields = func(self)
         return Hit.FIELD_SEP.join(fields)
+
+    def __str__(self):
+        return self.get_data_record(Hit.orig_fields);
+    # the next three are the same now:
+    #print(hit)
+    #print(hit.get_data_record())
+    #print(hit.get_data_record(Hit.orig_fields))
 
 
 # XXX rusnya -- 100%, hogy szépíthető, egyszerűsíthető
@@ -122,7 +122,7 @@ def handle_spaces_process_parallel(word_file, full_file):
     """
     Process `word_file` (containing just the 'word' attrib for easier alignment)
     and `full_file` (the same with all attribs needed) in parallel.
-    The two files should be: (1) equal length; (2) without header.
+    The two files should be: (1) equal length; (2) without file header.
     """
     for wline, fline in zip(word_file, full_file):
 
@@ -137,11 +137,11 @@ def handle_spaces_process_parallel(word_file, full_file):
 
         hit = Hit()
 
-        # 1st token: header
+        # 1st token: hit header
         hit.set_header(next(wtoks))
         next(ftoks) # XXX ua kell lennie, ellenőrzés nincs
 
-        # 2ns token: '|'
+        # 2nd token: '|'
         next(wtoks), next(ftoks)
 
         tokens = []
@@ -203,10 +203,32 @@ def main():
     word_file = f'{FILE}_word.txt' # just the 'word' attrib (for easier alignment)
     full_file = f'{FILE}_full.txt' # the same with all attribs needed
 
+    # -----
+
+    # 1. original ~ NoSkE basic but cut into fields
+    orig = Hit.orig_fields
+
+    # 2. header + csak a KWIC szóalak
+    def header_kwic(hit):
+        return hit.header + [hit.kwic[0][0]]
+
+    # 3. KWIC szóalak lemma + 1 bal-kontext lemma + 1 jobb-kontext lemma
+    # XXX IndexError-t ad, közben meg megcsinálja végig a fájl -- vajon miért?
+    def one_context(hit):
+        return [hit.left[-1][1], hit.kwic[0][1], hit.right[0][1]]
+
+    # 4. még olyat lehetne, hogy megkeresi a legközelebbi igét :)
+    #def nearest_verb(hit):
+        #fields = XXX
+
+    func_for_processing = orig
+
+    # -----
+
     with open(word_file, "r") as wfile, open(full_file, "r") as ffile:
         hits = handle_spaces_process_parallel(wfile, ffile)
         for hit in hits:
-            print(hit.get_data_record())
+            print(hit.get_data_record(func_for_processing))
 
 
 def get_args():

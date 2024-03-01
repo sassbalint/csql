@@ -27,25 +27,51 @@ CAN_CONTAIN_NOSKE_SEP = None
 class Hit:
     """Represent a concordance hit: header, left context, kwic, right context."""
     def __init__(self):
-        self.header = ''
+        self.header = []
         self.left = []
         self.kwic = []
         self.right = []
 
     FIELD_SEP = '\t'
+    FORMAT_LIST_SEP = ' '
+
+    def set_header(self, header_string):
+        self.header = header_string.split(NOSKE_HEADER_SEP)
 
     @staticmethod
-    def format_list(lst):
+    def format_token(tok): # token = list of features!
         MAX_LINE_LENGTH = 100000 # hope that its enough
-        return pprint.pformat(lst, width=MAX_LINE_LENGTH, compact=True)
+        return pprint.pformat(tok, width=MAX_LINE_LENGTH, compact=True)
+
+    @staticmethod
+    def format_text(text): # text = list of tokens!
+        return Hit.FORMAT_LIST_SEP.join(Hit.format_token(tok) for tok in text)
 
     def __str__(self):
         s = ''
-        s += Hit.FIELD_SEP.join(self.header.split(NOSKE_HEADER_SEP))
+        s += Hit.FIELD_SEP.join(self.header)
         for member in [self.left, self.kwic, self.right]:
             s += Hit.FIELD_SEP
-            s += ' '.join(self.format_list(tok) for tok in member)
+            s += self.format_text(member)
         return s
+
+    def get_data_record(self):
+        """Return a data record."""
+        # How could it be parametrized in detail? XXX
+
+        # original ~ NoSkE basic but cut into fields
+        fields = self.header + [self.format_text(member) for member in [self.left, self.kwic, self.right]]
+
+        # header + csak a KWIC szóalak
+        #fields = self.header + [self.kwic[0][0]]
+
+        # KWIC szóalak lemma + 1 bal-kontext lemma + 1 jobb-kontext lemma
+        #fields = [self.left[-1][1], self.kwic[0][1], self.right[0][1]]
+
+        # még olyat lehetne, hogy megkeresi a legközelebbi igét :)
+        #fields = XXX
+
+        return Hit.FIELD_SEP.join(fields)
 
 
 # XXX rusnya -- 100%, hogy szépíthető, egyszerűsíthető
@@ -112,7 +138,7 @@ def handle_spaces_process_parallel(word_file, full_file):
         hit = Hit()
 
         # 1st token: header
-        hit.header = next(wtoks)
+        hit.set_header(next(wtoks))
         next(ftoks) # XXX ua kell lennie, ellenőrzés nincs
 
         # 2ns token: '|'
@@ -180,7 +206,7 @@ def main():
     with open(word_file, "r") as wfile, open(full_file, "r") as ffile:
         hits = handle_spaces_process_parallel(wfile, ffile)
         for hit in hits:
-            print(hit)
+            print(hit.get_data_record())
 
 
 def get_args():

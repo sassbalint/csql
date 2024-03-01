@@ -204,6 +204,8 @@ def main():
 
     FILE = args.file
 
+    FUNC = args.func
+
     # XXX SHOULD BE: (1) equal length; (2) without header
     word_file = f'{FILE}_word.txt' # just the 'word' attrib (for easier alignment)
     full_file = f'{FILE}_full.txt' # the same with all attribs needed
@@ -222,11 +224,32 @@ def main():
     def one_context(hit):
         return [hit.left[-1][1], hit.kwic[0][1], hit.right[0][1]]
 
-    # 4. még olyat lehetne, hogy megkeresi a legközelebbi igét :)
-    #def nearest_verb(hit):
-        #fields = XXX
+    # 4. jobbsó legközelebbi ige
+    def nearest_verb(hit):
+        fields = [hit.kwic[0][0]]
+        verb_lemma = 'None'
+        verb_index = 'None'
+        for i, token in enumerate(hit.right):
+            if token[2] == 'VERB':
+                verb_lemma = token[1]
+                verb_index = i
+                break
+        fields += [verb_lemma, str(verb_index)]
+        return fields
 
-    func_for_processing = orig
+    funcs = {
+        'orig': orig,
+        'header_kwic': header_kwic,
+        'one_context': one_context,
+        'nearest_verb': nearest_verb
+    }
+
+    func_for_processing = None
+    try:
+        func_for_processing = funcs[FUNC] # XXX no error handling yet
+    except KeyError:
+        print(f"func given by param `-F` should be in {list(funcs.keys())} but was '{FUNC}'", file=sys.stderr)
+        exit(1)
 
     # -----
 
@@ -245,6 +268,13 @@ def get_args():
     parser.add_argument(
         '-f', '--file',
         help='filename',
+        required=True,
+        type=str,
+        default=argparse.SUPPRESS
+    )
+    parser.add_argument(
+        '-F', '--func',
+        help='name of the function to use for creating .tsv data records',
         required=True,
         type=str,
         default=argparse.SUPPRESS

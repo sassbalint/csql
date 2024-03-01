@@ -3,13 +3,14 @@ csql version to support corpling research of "Brüsszel".
 """
 
 import argparse
-import pprint
 import sys
+
+from hit import Hit
+from funcs import funcs
 
 
 # are these configurable using crystal???
 NOSKE_SEP = '/'
-NOSKE_HEADER_SEP = ','
 NOSKE_KWIC_BEG = '<coll>'
 NOSKE_KWIC_END = '</coll>'
 
@@ -25,56 +26,6 @@ FRAGMENT_JOINER = '++'
 #  (2) az értékben lehet szóköz, és ezt sehogy sem kezeli a formátum!!!
 # és ezt a NoSkE XML download funkciója sem kezeli!
 # ejnye!
-
-
-class Hit:
-    """Represent a concordance hit: header, left context, kwic, right context."""
-    def __init__(self):
-        self.header = []
-        self.left = []
-        self.kwic = []
-        self.right = []
-
-    FIELD_SEP = '\t'
-    FORMAT_LIST_SEP = ' '
-
-    def set_header(self, header_string):
-        """Stores header fields as a list."""
-        self.header = header_string.split(NOSKE_HEADER_SEP)
-
-    @staticmethod
-    def format_token(tok): # token = list of features!
-        """Format features of a token as printed python list."""
-        MAX_LINE_LENGTH = 100000 # hope that its enough
-        return pprint.pformat(tok, width=MAX_LINE_LENGTH, compact=True)
-
-    @staticmethod
-    def format_text(text): # text = list of tokens!
-        """Format tokens of a text by joining them."""
-        return Hit.FORMAT_LIST_SEP.join(Hit.format_token(tok) for tok in text)
-
-    # XXX vhogy ez így tűnik jónak, h "kívülről" kezeli, nem `self`-ként, hm..
-    # XXX talán, hogy az osztályon kívül is definiálhassunk ilyen fgveket, hm..
-    @staticmethod
-    def orig_fields(hit):
-        """
-        Default processing function for `get_data_record()`.
-        Give original NoSkE format but cut into fields.
-        """
-        return hit.header + [hit.format_text(member) for member in [hit.left, hit.kwic, hit.right]]
-
-    def get_data_record(self, func=None):
-        """Return a .tsv data record applying `func` to `self`."""
-        if func is None: func = Hit.orig_fields
-        fields = func(self)
-        return Hit.FIELD_SEP.join(fields)
-
-    def __str__(self):
-        return self.get_data_record(Hit.orig_fields);
-    # the next three are the same now:
-    #print(hit)
-    #print(hit.get_data_record())
-    #print(hit.get_data_record(Hit.orig_fields))
 
 
 # XXX rusnya -- 100%, hogy szépíthető, egyszerűsíthető
@@ -210,48 +161,12 @@ def main():
     word_file = f'{FILE}_word.txt' # just the 'word' attrib (for easier alignment)
     full_file = f'{FILE}_full.txt' # the same with all attribs needed
 
-    # -----
-
-    # 1. original ~ NoSkE basic but cut into fields
-    orig = Hit.orig_fields
-
-    # 2. header + csak a KWIC szóalak
-    def header_kwic(hit):
-        return hit.header + [hit.kwic[0][0]]
-
-    # 3. KWIC szóalak lemma + 1 bal-kontext lemma + 1 jobb-kontext lemma
-    # XXX IndexError-t ad, közben meg megcsinálja végig a fájl -- vajon miért?
-    def one_context(hit):
-        return [hit.left[-1][1], hit.kwic[0][1], hit.right[0][1]]
-
-    # 4. jobbsó legközelebbi ige
-    def nearest_verb(hit):
-        fields = [hit.kwic[0][0]]
-        verb_lemma = 'None'
-        verb_index = 'None'
-        for i, token in enumerate(hit.right):
-            if token[2] == 'VERB':
-                verb_lemma = token[1]
-                verb_index = i
-                break
-        fields += [verb_lemma, str(verb_index)]
-        return fields
-
-    funcs = {
-        'orig': orig,
-        'header_kwic': header_kwic,
-        'one_context': one_context,
-        'nearest_verb': nearest_verb
-    }
-
     func_for_processing = None
     try:
-        func_for_processing = funcs[FUNC] # XXX no error handling yet
+        func_for_processing = funcs[FUNC]
     except KeyError:
         print(f"func given by param `-F` should be in {list(funcs.keys())} but was '{FUNC}'", file=sys.stderr)
         exit(1)
-
-    # -----
 
     with open(word_file, "r") as wfile, open(full_file, "r") as ffile:
         hits = handle_spaces_process_parallel(wfile, ffile)

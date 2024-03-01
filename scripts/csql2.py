@@ -170,7 +170,8 @@ def main():
 
     with open(word_file, "r") as wfile, open(full_file, "r") as ffile:
         hits = handle_spaces_process_parallel(wfile, ffile)
-        for hit in hits:
+        for i, hit in enumerate(hits):
+            hit.header = [str(i)] + hit.header # XXX hack for numbering hits
             print(hit.get_data_record(func_for_processing))
 
 

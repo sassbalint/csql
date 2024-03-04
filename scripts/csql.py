@@ -61,7 +61,7 @@ def handle_noske_seps_split2fields(word_fragments):
                     out.append(next(fields_iter))
             ret = out
         else:
-            ret = f'ERROR:[{fields}]'
+            ret = [f'ERROR:[{fields}]']
     return ret
 
 

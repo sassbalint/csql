@@ -2,6 +2,8 @@
 Processing funcs for csql.
 """
 
+import sys
+
 from hit import Hit
 
 # -----
@@ -10,6 +12,14 @@ FORM = 0
 LEMMA = 1
 POS = 2
 FEAT = 3
+
+ID = 4
+DEPLABEL = 5
+
+HEADLEMMA = 6
+HEADPOS = 7
+HEADFEAT = 8
+HEADID = 9
 
 # 1. original ~ NoSkE basic but cut into fields
 orig = Hit.orig_fields
@@ -59,6 +69,43 @@ def brusszel(hit):
         + [' '.join(t[FORM] for t in hit.right)]
     )
 
+# 7. fej <- dep
+def dep(hit):
+    return (
+        hit.header
+        + [' '.join(t[FORM] for t in hit.left)]
+        + [hit.kwic[0][FORM]]
+        + [hit.kwic[0][HEADLEMMA]]
+        + [hit.kwic[0][HEADPOS]]
+        + [hit.kwic[0][DEPLABEL]]
+        + [' '.join(t[FORM] for t in hit.right)]
+    )
+
+
+# 8. fej <- dep -- head szóalak kikeresgélve a head dolgai közül
+def dep2(hit):
+    kwic = hit.kwic[0] # egyszavas kwic-t feltételezve
+    headid = kwic[HEADID]
+    headform = '?'
+    for tok in hit.left + hit.right:
+        try: # XXX csql.py ERROR-os sorok miatt...
+            if tok[ID] == headid:
+                headform = tok[FORM]
+                break
+        except IndexError:
+            pass
+    return (
+        hit.header
+        + [' '.join(t[FORM] for t in hit.left)]
+        + [hit.kwic[0][FORM]]
+        + [hit.kwic[0][HEADLEMMA]]
+        + [hit.kwic[0][HEADPOS]]
+        + [hit.kwic[0][DEPLABEL]]
+        + [headform]
+        + [' '.join(t[FORM] for t in hit.right)]
+    )
+
+
 # -----
 
 # XXX jó lenne elkerülni, hogy itt újból fel kelljen sorolni!
@@ -69,5 +116,7 @@ funcs = {
     'nearest_verb': nearest_verb,
     'length': length,
     'brusszel': brusszel,
+    'dep': dep,
+    'dep2': dep2,
 }
 
